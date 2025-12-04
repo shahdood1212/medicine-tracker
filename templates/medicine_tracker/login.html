@@ -1,0 +1,52 @@
+{% extends 'medicine_tracker/base.html' %}
+{% block title %}Login - Medicine Tracker{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white text-center">
+                    <h4><i class="bi bi-person-circle"></i> Login</h4>
+                </div>
+                <div class="card-body">
+
+                    <form method="POST" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label class="form-label">Username</label>
+                            <input type="text" name="username" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <input type="password" name="password" class="form-control" required>
+                        </div>
+
+                        <button class="btn btn-primary w-100">
+                            <i class="bi bi-box-arrow-in-right"></i> Login
+                        </button>
+                    </form>
+
+                    <p class="mt-3 text-center">
+                        Don't have an account?
+                        <a href="{% url 'register' %}">Register Now</a>
+                    </p>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof initializeApp === 'function') {
+            initializeApp();
+        }
+    });
+</script>
+{% endblock %}

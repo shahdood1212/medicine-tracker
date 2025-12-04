@@ -1,0 +1,338 @@
+<!-- templates/medicine_tracker/medicine_form.html -->
+{% extends 'medicine_tracker/base.html' %}
+{% load static %}
+
+{% block title %}{{ action }} Medication - Medicine Tracker{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="mb-4">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'main_menu' %}">main menu</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'medication_list' %}">Medications</a></li>
+                        <li class="breadcrumb-item active">{{ action }} Medication</li>
+                    </ol>
+                </nav>
+                <h2>
+                    <i class="bi bi-{% if action == 'Add' %}plus-circle{% else %}pencil{% endif %}"></i>
+                    {{ action }} Medication
+                </h2>
+            </div>
+
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-prescription2"></i> Medication Information
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" id="medicineForm">
+                        {% csrf_token %}
+
+                        <h5 class="mb-3 pb-2 border-bottom">
+                            <i class="bi bi-info-circle text-primary"></i> Basic Information
+                        </h5>
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_name" class="form-label">
+                                    <i class="bi bi-capsule"></i> Medicine Name *
+                                </label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.name.errors }}
+                                    </div>
+                                {% endif %}
+                                <small class="text-muted">Generic or brand name</small>
+                            </div>
+
+
+                            <div class="col-md-6 mb-3">
+                                <label for="id_dosage" class="form-label">
+                                    <i class="bi bi-prescription"></i> Dosage *
+                                </label>
+                                {{ form.dosage }}
+                                {% if form.dosage.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.dosage.errors }}
+                                    </div>
+                                {% endif %}
+                                <small class="text-muted">e.g., 500mg, 2 tablets, 10ml</small>
+                            </div>
+
+
+                            <div class="col-md-6 mb-3">
+                                <label for="id_form" class="form-label">
+                                    <i class="bi bi-file-medical"></i> Medication Form *
+                                </label>
+                                {{ form.form }}
+                                {% if form.form.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.form.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="id_frequency" class="form-label">
+                                    <i class="bi bi-arrow-repeat"></i> Frequency *
+                                </label>
+                                {{ form.frequency }}
+                                {% if form.frequency.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.frequency.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <h5 class="mb-3 pb-2 border-bottom">
+                            <i class="bi bi-calendar text-success"></i> Schedule
+                        </h5>
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_start_date" class="form-label">
+                                    <i class="bi bi-calendar-event"></i> Start Date *
+                                </label>
+{{ form.start_date }}
+                                {% if form.start_date.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.start_date.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                                            <div class="col-md-6 mb-3">
+                        <label for="id_end_date" class="form-label">
+                            <i class="bi bi-calendar-x"></i> End Date (Optional)
+                        </label>
+                        {{ form.end_date }}
+
+                        {% if form.end_date.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.end_date.errors }}
+                            </div>
+                        {% endif %}
+
+                        <small class="text-muted">Leave blank for ongoing medication</small>
+                    </div>
+
+  
+                    <div class="col-md-12 mb-3">
+                                <div class="form-check form-switch">
+                                    {{ form.is_active }}
+                                    <label class="form-check-label" for="id_is_active">
+                                        <i class="bi bi-toggle-on"></i> Active Medication
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h5 class="mb-3 pb-2 border-bottom">
+                            <i class="bi bi-bell text-warning"></i> Reminder Times
+                        </h5>
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div id="reminderTimesContainer">
+                                    <div class="input-group mb-2 reminder-time-input">
+                                        <span class="input-group-text">
+                                            <i class="bi bi-clock"></i>
+                                        </span>
+                                        <input type="time" class="form-control" name="reminder_times" 
+                                               placeholder="Select time">
+                                        <button class="btn btn-outline-danger remove-reminder" type="button">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="addReminderBtn">
+                                    <i class="bi bi-plus-circle"></i> Add Another Reminder Time
+                                </button>
+                                <small class="text-muted d-block mt-2">
+                                    Set times when you want to be reminded to take this medication
+                                </small>
+                            </div>
+                        </div>
+
+  
+                        <h5 class="mb-3 pb-2 border-bottom">
+                            <i class="bi bi-file-text text-info"></i> Instructions & Notes
+                        </h5>
+                        <div class="row mb-4">
+                            <div class="col-md-12 mb-3">
+                                <label for="id_instructions" class="form-label">
+                                    Special Instructions
+                                </label>
+                                {{ form.instructions }}
+                                {% if form.instructions.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.instructions.errors }}
+                                    </div>
+                                {% endif %}
+                                <small class="text-muted">
+                                    e.g., "Take with food", "Avoid dairy products", "Take before bed"
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <hr class="mb-4">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'medication_list' %}" class="btn btn-secondary btn-lg">
+                                        <i class="bi bi-x-circle"></i> Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="bi bi-check-circle"></i> Save Medication
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-4 border-info">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-question-circle text-info"></i> Need Help?
+                    </h6>
+                    <ul class="mb-0 small">
+                        <li>All fields marked with * are required</li>
+                        <li>Set multiple reminder times for medications taken more than once daily</li>
+                        <li>Use the end date for short-term medications (e.g., antibiotics)</li>
+                        <li>Add detailed instructions to help you take medications correctly</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    
+    document.getElementById('addReminderBtn').addEventListener('click', function() {
+        const container = document.getElementById('reminderTimesContainer');
+        const newInput = document.createElement('div');
+        newInput.className = 'input-group mb-2 reminder-time-input';
+        newInput.innerHTML = `
+            <span class="input-group-text">
+                <i class="bi bi-clock"></i>
+            </span>
+            <input type="time" class="form-control" name="reminder_times" placeholder="Select time">
+            <button class="btn btn-outline-danger remove-reminder" type="button">
+                <i class="bi bi-trash"></i>
+            </button>
+        `;
+        container.appendChild(newInput);
+    
+        newInput.querySelector('.remove-reminder').addEventListener('click', function() {
+            newInput.remove();
+        });
+    });
+
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-reminder')) {
+            const reminderInputs = document.querySelectorAll('.reminder-time-input');
+            if (reminderInputs.length > 1) {
+                e.target.closest('.reminder-time-input').remove();
+            } else {
+                alert('At least one reminder time is required');
+            }
+        }
+    });
+
+    document.getElementById('medicineForm').addEventListener('submit', function(e) {
+        const name = document.getElementById('id_name').value.trim();
+        const dosage = document.getElementById('id_dosage').value.trim();
+        const startDate = document.getElementById('id_start_date').value;
+        const endDate = document.getElementById('id_end_date').value;
+        
+   
+        if (!name || !dosage || !startDate) {
+            e.preventDefault();
+            alert('Please fill in all required fields marked with *');
+            return false;
+        }
+   
+        if (endDate && endDate < startDate) {
+            e.preventDefault();
+            alert('End date cannot be before start date');
+            return false;
+        }
+        
+   
+        const reminderTimes = document.querySelectorAll('input[name="reminder_times"]');
+        let hasValidTime = false;
+        reminderTimes.forEach(input => {
+            if (input.value) {
+                hasValidTime = true;
+            }
+        });
+        
+        if (!hasValidTime) {
+            const confirmNoReminder = confirm('No reminder times set. Continue without reminders?');
+            if (!confirmNoReminder) {
+                e.preventDefault();
+                return false;
+            }
+        }
+    });
+
+    document.getElementById('id_frequency').addEventListener('change', function() {
+        const frequency = this.value;
+        const container = document.getElementById('reminderTimesContainer');
+        
+        
+        container.innerHTML = '';
+        
+        
+        let suggestedTimes = [];
+        
+        switch(frequency) {
+            case 'once_daily':
+                suggestedTimes = ['09:00'];
+                break;
+            case 'twice_daily':
+                suggestedTimes = ['09:00', '21:00'];
+                break;
+            case 'three_times':
+                suggestedTimes = ['08:00', '14:00', '20:00'];
+                break;
+            case 'four_times':
+                suggestedTimes = ['08:00', '12:00', '16:00', '20:00'];
+                break;
+            case 'every_6_hours':
+                suggestedTimes = ['06:00', '12:00', '18:00', '00:00'];
+                break;
+            case 'every_8_hours':
+                suggestedTimes = ['08:00', '16:00', '00:00'];
+                break;
+            case 'every_12_hours':
+                suggestedTimes = ['09:00', '21:00'];
+                break;
+            default:
+                suggestedTimes = ['09:00'];
+        }
+        suggestedTimes.forEach(time => {
+            const newInput = document.createElement('div');
+            newInput.className = 'input-group mb-2 reminder-time-input';
+            newInput.innerHTML = `
+                <span class="input-group-text">
+                    <i class="bi bi-clock"></i>
+                </span>
+                <input type="time" class="form-control" name="reminder_times" value="${time}">
+                <button class="btn btn-outline-danger remove-reminder" type="button">
+                    <i class="bi bi-trash"></i>
+                </button>
+            `;
+            container.appendChild(newInput);
+        });
+    });
+</script>
+{% endblock %}

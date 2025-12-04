@@ -1,0 +1,392 @@
+{% extends 'medicine_tracker/base.html' %}
+{% load static %}
+{% block title %}Schedule - Medicine Tracker{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2>
+                <i class="bi bi-calendar-week"></i> Medication Schedule
+            </h2>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="row align-items-center">
+
+                        <div class="col-md-4">
+                            <div class="btn-group w-100" role="group">
+                                <a href="?view=daily&date={{ selected_date|date:'Y-m-d' }}" 
+                                   class="btn btn-{% if view_type == 'daily' %}primary{% else %}outline-primary{% endif %}">
+                                    <i class="bi bi-calendar-day"></i> Daily
+                                </a>
+                                <a href="?view=weekly&date={{ selected_date|date:'Y-m-d' }}" 
+                                   class="btn btn-{% if view_type == 'weekly' %}primary{% else %}outline-primary{% endif %}">
+                                    <i class="bi bi-calendar-week"></i> Weekly
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="col-md-8">
+                            <div class="d-flex justify-content-end align-items-center">
+
+                                <a href="?view={{ view_type }}&date={{ prev_date|date:'Y-m-d' }}" 
+                                   class="btn btn-outline-secondary me-2">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+
+                                <div class="text-center mx-3">
+                                    {% if view_type == 'daily' %}
+                                    <h5 class="mb-0">{{ selected_date|date:"l, F d, Y" }}</h5>
+                                    {% else %}
+                                    <h5 class="mb-0">{{ start_date|date:"M d" }} - {{ end_date|date:"M d, Y" }}</h5>
+                                    {% endif %}
+                                </div>
+
+                                <a href="?view={{ view_type }}&date={{ next_date|date:'Y-m-d' }}" 
+                                   class="btn btn-outline-secondary ms-2">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+
+                                <a href="?view={{ view_type }}" class="btn btn-primary ms-3">
+                                    <i class="bi bi-calendar-check"></i> Today
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if view_type == 'daily' %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ul"></i> Schedule for {{ selected_date|date:"F d, Y" }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if schedules %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th width="15%">Time</th>
+                                    <th width="25%">Medication</th>
+                                    <th width="15%">Dosage</th>
+                                    <th width="20%">Instructions</th>
+                                    <th width="10%">Status</th>
+                                    <th width="15%">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for schedule in schedules %}
+                                <tr class="{% if schedule.status == 'taken' %}table-success{% elif schedule.status == 'missed' %}table-danger{% elif schedule.status == 'skipped' %}table-warning{% endif %}">
+                                    <!-- Time -->
+                                    <td>
+                                        <h5 class="mb-0">
+                                            <i class="bi bi-clock"></i>
+                                            {{ schedule.time|time:"h:i A" }}
+                                        </h5>
+                                    </td>
+
+
+                                    <td>
+                                        <strong>{{ schedule.medication.name }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ schedule.medication.get_form_display|default:"" }}</small>
+                                    </td>
+
+                                    <td>
+                                        <span class="badge bg-info">{{ schedule.medication.dosage }}</span>
+                                    </td>
+
+                                    <td>
+                                        <small>{{ schedule.medication.instructions|truncatewords:8|default:"No instructions" }}</small>
+                                    </td>
+
+                                    <td>
+                                        {% if schedule.status == 'taken' %}
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle"></i> Taken
+                                            </span>
+                                            {% if schedule.taken_at %}
+                                            <br><small class="text-muted">{{ schedule.taken_at|time:"h:i A" }}</small>
+                                            {% endif %}
+                                        {% elif schedule.status == 'skipped' %}
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-x-circle"></i> Skipped
+                                            </span>
+                                        {% elif schedule.status == 'missed' %}
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-exclamation-circle"></i> Missed
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-hourglass"></i> Scheduled
+                                            </span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        {% if schedule.status == 'scheduled' %}
+                                        <div class="btn-group-vertical btn-group-sm" role="group">
+                                    
+                                            <form method="post" action="{% url 'schedule_mark_taken' schedule.pk %}" class="d-inline">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-success btn-sm">
+                                                    <i class="bi bi-check-lg"></i> Taken
+                                                </button>
+                                            </form>
+                                    
+                                            <button type="button" class="btn btn-warning btn-sm" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#skipModal{{ schedule.pk }}">
+                                                <i class="bi bi-x-lg"></i> Skip
+                                            </button>
+                                        </div>
+                                        {% else %}
+                                        <small class="text-muted">No actions</small>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-calendar-x text-muted" style="font-size: 4rem;"></i>
+                        <h4 class="mt-3">No Medications Scheduled</h4>
+                        <p class="text-muted">There are no medications scheduled for this day.</p>
+                        <a href="{% url 'medicine_add' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Add Medication
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    
+    {% if view_type == 'weekly' %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calendar-range"></i> Weekly Schedule
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if week_schedules %}
+                    {% for day, day_schedules in week_schedules.items %}
+                    <div class="col-md-12 mb-4">
+                        <div class="card border-primary">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-calendar-event"></i>
+                                    {{ day|date:"l, F d, Y" }}
+                                    <span class="badge bg-primary float-end">
+                                        {{ day_schedules|length }} dose(s)
+                                    </span>
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                {% if day_schedules %}
+                                <div class="row">
+                                    {% for schedule in day_schedules %}
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card h-100 {% if schedule.status == 'taken' %}border-success{% elif schedule.status == 'missed' %}border-danger{% elif schedule.status == 'skipped' %}border-warning{% endif %}">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <h6 class="mb-0">{{ schedule.time|time:"h:i A" }}</h6>
+                                                    {% if schedule.status == 'taken' %}
+                                                        <span class="badge bg-success">Taken</span>
+                                                    {% elif schedule.status == 'skipped' %}
+                                                        <span class="badge bg-warning text-dark">Skipped</span>
+                                                    {% elif schedule.status == 'missed' %}
+                                                        <span class="badge bg-danger">Missed</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">Scheduled</span>
+                                                    {% endif %}
+                                                </div>
+                                                <p class="mb-1"><strong>{{ schedule.medication.name }}</strong></p>
+                                                <p class="mb-0 text-muted small">{{ schedule.medication.dosage }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <p class="text-muted mb-0">No medications scheduled for this day.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-calendar-x text-muted" style="font-size: 4rem;"></i>
+                        <h4 class="mt-3">No Weekly Schedule</h4>
+                        <p class="text-muted">No medications scheduled for this week.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm border-info">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-graph-up text-info"></i> Schedule Summary
+                    </h5>
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h3 class="text-primary">{{ schedules|length|default:0 }}</h3>
+                            <p class="text-muted mb-0">Total Scheduled</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h3 class="text-success">
+                           {{ total_taken }}    
+                            </h3>
+                            <p class="text-muted mb-0">Taken</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h3 class="text-warning">
+                            {{ total_skipped }}   
+                            </h3>
+                            <p class="text-muted mb-0">Skipped</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h3 class="text-danger">
+                               {{ total_missed }}
+                            </h3>
+                            <p class="text-muted mb-0">Missed</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% if schedules %}
+{% for schedule in schedules %}
+{% if schedule.status == 'scheduled' %}
+<div class="modal fade" id="skipModal{{ schedule.pk }}" tabindex="-1" aria-labelledby="skipModalLabel{{ schedule.pk }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-warning">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="skipModalLabel{{ schedule.pk }}">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Skip Medication
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <form method="post" action="{% url 'schedule_mark_skipped' schedule.pk %}" id="skipForm{{ schedule.pk }}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Note:</strong> Skipping this dose will be recorded in your medication history.
+                    </div>
+                    
+                    <p class="mb-2">Are you sure you want to skip:</p>
+                    <div class="card bg-light mb-3">
+                        <div class="card-body py-2">
+                            <h6 class="mb-1 text-primary">
+                                <i class="bi bi-capsule"></i> {{ schedule.medication.name }}
+                            </h6>
+                            <p class="mb-0 text-muted small">
+                                <strong>Dosage:</strong> {{ schedule.medication.dosage }}<br>
+                                <strong>Time:</strong> {{ schedule.time|time:"h:i A" }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="skipReason{{ schedule.pk }}" class="form-label">
+                            <i class="bi bi-pencil"></i> Reason for skipping (optional):
+                        </label>
+                        <textarea class="form-control" 
+                                  id="skipReason{{ schedule.pk }}" 
+                                  name="note" 
+                                  rows="3" 
+                                  placeholder="e.g., Feeling better, Side effects, Forgot to take it earlier..."></textarea>
+                        <small class="text-muted">This will help you track why you skipped medications</small>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-check-circle"></i> Confirm Skip
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+   
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowLeft' && !e.target.matches('input, textarea')) {
+            const prevBtn = document.querySelector('a[href*="prev_date"]');
+            if (prevBtn) prevBtn.click();
+        } else if (e.key === 'ArrowRight' && !e.target.matches('input, textarea')) {
+            const nextBtn = document.querySelector('a[href*="next_date"]');
+            if (nextBtn) nextBtn.click();
+        }
+    });
+
+    document.querySelectorAll('form[action*="taken"]').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const medicineName = this.closest('tr').querySelector('td:nth-child(2) strong').textContent;
+            if (!confirm(`Mark "${medicineName}" as taken?`)) {
+                e.preventDefault();
+            }
+        });
+    });
+
+    document.querySelectorAll('form[id^="skipForm"]').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Skipping...';
+        });
+    });
+
+    window.addEventListener('pageshow', function(event) {
+        document.querySelectorAll('.modal').forEach(modal => {
+            const bsModal = bootstrap.Modal.getInstance(modal);
+            if (bsModal) {
+                bsModal.hide();
+            }
+        });
+    });
+</script>
+{% endblock %}
